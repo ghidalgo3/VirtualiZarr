@@ -14,7 +14,8 @@ _INTEGER = (
 )
 _SEPARATOR = r"\."
 _CHUNK_KEY = rf"^{_INTEGER}+({_SEPARATOR}{_INTEGER})*$"  # matches 1 integer, optionally followed by more integers each separated by a separator (i.e. a period)
-
+integer_pattern = re.compile(_INTEGER)
+chunk_key_pattern = re.compile(_CHUNK_KEY)
 
 class ChunkEntry(BaseModel):
     """
@@ -135,7 +136,7 @@ class ChunkManifest(BaseModel):
 
 
 def split(key: ChunkKey) -> list[int]:
-    return list(int(i) for i in key.split("."))
+    return list(int(i) for i in integer_pattern.findall(key))
 
 
 def join(inds: Iterable[int]) -> ChunkKey:
@@ -144,13 +145,13 @@ def join(inds: Iterable[int]) -> ChunkKey:
 
 def get_ndim_from_key(key: str) -> int:
     """Get number of dimensions implied by key, e.g. '4.5.6' -> 3"""
-    return len(key.split("."))
+    return key.count(".") + 1
 
 
 def validate_chunk_keys(chunk_keys: Iterable[ChunkKey]):
     # Check if all keys have the correct form
     for key in chunk_keys:
-        if not re.match(_CHUNK_KEY, key):
+        if not chunkey_pattern.fullmatch(key):
             raise ValueError(f"Invalid format for chunk key: '{key}'")
 
     # Check if all keys have the same number of dimensions
